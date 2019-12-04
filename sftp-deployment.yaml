@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sftp
+  labels:
+    app: sftp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sftp
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: sftp
+    spec:
+      initContainers:
+        - name: volume-permissions
+          image: busybox
+          command: ["sh", "-c", "chmod 755 /home"]
+          volumeMounts:
+            - mountPath: /home
+              name: sftp
+      containers:
+        - image: YOUR_REGISTRY/sftp:0.0.1
+          imagePullPolicy: "Always"
+          name: sftp
+          ports:
+            - containerPort: 22
+          resources:
+            limits:
+              memory: "8Gi"
+              cpu: "8"
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - mountPath: /home
+              name: sftp
+      restartPolicy: Always
+      volumes:
+        - name: sftp
+          persistentVolumeClaim:
+            claimName: sftp-pvc
